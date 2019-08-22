@@ -78,9 +78,11 @@ func PickCipher(name string, key []byte, password string) (Cipher, error) {
 	name = strings.ToUpper(name)
 
 	switch name {
-	case "DUMMY":
-		return &dummy{}, nil
-	case "CHACHA20-IETF-POLY1305":
+	// case "DUMMY":
+	// case "NONE": //ufo
+	// 	//return &dummy{}, nil   //ufo
+	// case "CHACHA20-IETF-POLY1305":
+	case "DUMMY", "CHACHA20-IETF-POLY1305":
 		name = aeadChacha20Poly1305
 	case "AES-128-GCM":
 		name = aeadAes128Gcm
@@ -98,6 +100,9 @@ func PickCipher(name string, key []byte, password string) (Cipher, error) {
 			return nil, shadowaead.KeySizeError(choice.KeySize)
 		}
 		aead, err := choice.New(key)
+		if name == "DUMMY" { //ufo
+			return &dummy{aead}, err //ufo
+		}
 		return &aeadCipher{aead}, err
 	}
 
@@ -131,7 +136,7 @@ func (ciph *streamCipher) PacketConn(c net.PacketConn) net.PacketConn {
 
 // dummy cipher does not encrypt
 
-type dummy struct{}
+type dummy struct{ shadowaead.Cipher } //ufo
 
 func (dummy) StreamConn(c net.Conn) net.Conn             { return c }
 func (dummy) PacketConn(c net.PacketConn) net.PacketConn { return c }
